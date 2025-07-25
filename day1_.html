@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Học từ vựng Kanji N3 với flashcard và trắc nghiệm tương tác">
+    <title>Học Từ Vựng Kanji N3</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6">Học Từ Vựng Kanji N3</h1>
+
+        <!-- Thanh tìm kiếm -->
+        <div class="mb-6">
+            <input id="searchInput" type="text" placeholder="Tìm kiếm từ vựng..." class="w-full p-2 border rounded-lg">
+        </div>
+
+        <!-- Danh sách từ vựng -->
+        <div id="vocabList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+        <!-- Flashcard -->
+        <div id="flashcard" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full text-center">
+                <div id="flashcardContent" class="text-2xl mb-4"></div>
+                <button id="flipButton" class="bg-blue-500 text-white px-4 py-2 rounded mr-2">Lật thẻ</button>
+                <button id="nextButton" class="bg-green-500 text-white px-4 py-2 rounded mr-2">Thẻ tiếp theo</button>
+                <button id="closeFlashcard" class="bg-red-500 text-white px-4 py-2 rounded">Đóng</button>
+            </div>
+        </div>
+
+        <!-- Trắc nghiệm -->
+        <div id="quiz" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <h2 class="text-xl font-bold mb-4">Câu hỏi trắc nghiệm</h2>
+                <div id="question" class="text-lg mb-4"></div>
+                <div id="options" class="space-y-2"></div>
+                <div id="result" class="mt-4 text-center"></div>
+                <div class="mt-4 flex justify-center space-x-2">
+                    <button id="nextQuestion" class="bg-green-500 text-white px-4 py-2 rounded">Câu tiếp theo</button>
+                    <button id="closeQuiz" class="bg-red-500 text-white px-4 py-2 rounded">Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nút điều khiển -->
+        <div class="fixed bottom-4 right-4 flex space-x-2">
+            <button id="startFlashcard" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Bắt đầu Flashcard</button>
+            <button id="startQuiz" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Bắt đầu Trắc Nghiệm</button>
+        </div>
+    </div>
+
+    <script>
+        // Dữ liệu từ vựng
+        const vocabData = [
+            { kanji: "駐", vietnamese: "TRÚ", reading: "ちゅう", meaning: "" },
+            { kanji: "駐車", vietnamese: "TRÚ XA", reading: "ちゅうしゃ", meaning: "Đỗ xe" },
+            { kanji: "駐車場", vietnamese: "TRÚ XA TRƯỜNG", reading: "ちゅうしゃじょう", meaning: "Bãi đỗ xe" },
+            { kanji: "無", vietnamese: "VÔ", reading: "む/ない", meaning: "" },
+            { kanji: "無休", vietnamese: "VÔ HƯU", reading: "むきゅう", meaning: "Làm việc không có ngày nghỉ" },
+            { kanji: "無料", vietnamese: "VÔ LIỆU", reading: "むりょう", meaning: "Không mất tiền phí" },
+            { kanji: "無理", vietnamese: "VÔ LÝ", reading: "むり", meaning: "Vô lý, quá sức" },
+            { kanji: "無い", vietnamese: "VÔ", reading: "ない", meaning: "Không có" },
+            { kanji: "満", vietnamese: "MÃN", reading: "まん", meaning: "" },
+            { kanji: "満車", vietnamese: "MÃN XA", reading: "まんしゃ", meaning: "Đầy xe" },
+            { kanji: "満員", vietnamese: "MÃN VIÊN", reading: "まんいん", meaning: "Đầy người" },
+            { kanji: "不満", vietnamese: "BẤT MÃN", reading: "ふまん", meaning: "Bất mãn" },
+            { kanji: "向", vietnamese: "HƯỚNG", reading: "こう/むこう/むかう/むき", meaning: "" },
+            { kanji: "方向", vietnamese: "PHƯƠNG HƯỚNG", reading: "ほうこう", meaning: "Phương hướng" },
+            { kanji: "向こう", vietnamese: "HƯỚNG", reading: "むこう", meaning: "Phía bên kia" },
+            { kanji: "向かう", vietnamese: "HƯỚNG", reading: "むかう", meaning: "Hướng về" },
+            { kanji: "○○向き", vietnamese: "HƯỚNG", reading: "むき", meaning: "Phù hợp, dành cho + danh từ" },
+            { kanji: "禁", vietnamese: "CẤM", reading: "きん", meaning: "" },
+            { kanji: "禁止", vietnamese: "CẤM CHỈ", reading: "きんし", meaning: "Cấm" },
+            { kanji: "関", vietnamese: "QUAN", reading: "かん", meaning: "" },
+            { kanji: "関心", vietnamese: "QUAN TÂM", reading: "かんしん", meaning: "Quan tâm" },
+            { kanji: "関する", vietnamese: "QUAN", reading: "かんする", meaning: "Có liên quan" },
+            { kanji: "係", vietnamese: "HỆ", reading: "けい/かかり", meaning: "" },
+            { kanji: "関係", vietnamese: "QUAN HỆ", reading: "かんけい", meaning: "Quan hệ" },
+            { kanji: "係", vietnamese: "HỆ", reading: "かかり", meaning: "Người chịu trách nhiệm" },
+            { kanji: "断", vietnamese: "ĐOẠN", reading: "だん/ことわる", meaning: "" },
+            { kanji: "無断", vietnamese: "VÔ ĐOẠN", reading: "むだん", meaning: "Tự ý, không có sự cho phép" },
+            { kanji: "断水", vietnamese: "ĐOẠN THỦY", reading: "だんすい", meaning: "Cắt nguồn nước" },
+            { kanji: "断る", vietnamese: "ĐOẠN", reading: "ことわる", meaning: "Từ chối" }
+        ];
+
+        // Hiển thị danh sách từ vựng
+        function displayVocabList(data) {
+            const vocabList = document.getElementById('vocabList');
+            vocabList.innerHTML = '';
+            data.forEach(vocab => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-4 rounded-lg shadow';
+                card.innerHTML = `
+                    <h2 class="text-xl font-bold">${vocab.kanji}</h2>
+                    <p><strong>Phiên âm:</strong> ${vocab.vietnamese}</p>
+                    <p><strong>Cách đọc:</strong> ${vocab.reading}</p>
+                    <p><strong>Nghĩa:</strong> ${vocab.meaning || 'Không có nghĩa cụ thể'}</p>
+                `;
+                vocabList.appendChild(card);
+            });
+        }
+
+        // Tìm kiếm từ vựng
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredData = vocabData.filter(vocab =>
+                vocab.kanji.toLowerCase().includes(searchTerm) ||
+                vocab.vietnamese.toLowerCase().includes(searchTerm) ||
+                vocab.reading.toLowerCase().includes(searchTerm) ||
+                (vocab.meaning && vocab.meaning.toLowerCase().includes(searchTerm))
+            );
+            displayVocabList(filteredData);
+        });
+
+        // Flashcard logic
+        let currentCardIndex = 0;
+        let isFlipped = false;
+
+        function showFlashcard() {
+            const flashcard = document.getElementById('flashcard');
+            const flashcardContent = document.getElementById('flashcardContent');
+            flashcard.classList.remove('hidden');
+            document.getElementById('quiz').classList.add('hidden');
+            isFlipped = false;
+            flashcardContent.textContent = vocabData[currentCardIndex].kanji;
+        }
+
+        document.getElementById('startFlashcard').addEventListener('click', showFlashcard);
+
+        document.getElementById('flipButton').addEventListener('click', () => {
+            const flashcardContent = document.getElementById('flashcardContent');
+            if (!isFlipped) {
+                flashcardContent.innerHTML = `
+                    <p><strong>Phiên âm:</strong> ${vocabData[currentCardIndex].vietnamese}</p>
+                    <p><strong>Cách đọc:</strong> ${vocabData[currentCardIndex].reading}</p>
+                    <p><strong>Nghĩa:</strong> ${vocabData[currentCardIndex].meaning || 'Không có nghĩa cụ thể'}</p>
+                `;
+                isFlipped = true;
+            } else {
+                flashcardContent.textContent = vocabData[currentCardIndex].kanji;
+                isFlipped = false;
+            }
+        });
+
+        document.getElementById('nextButton').addEventListener('click', () => {
+            currentCardIndex = (currentCardIndex + 1) % vocabData.length;
+            showFlashcard();
+        });
+
+        document.getElementById('closeFlashcard').addEventListener('click', () => {
+            document.getElementById('flashcard').classList.add('hidden');
+        });
+
+        // Trắc nghiệm logic
+        let currentQuestion = null;
+
+        function generateQuestion() {
+            const validVocab = vocabData.filter(v => v.meaning);
+            const randomIndex = Math.floor(Math.random() * validVocab.length);
+            const correctVocab = validVocab[randomIndex];
+
+            const questionTypes = ['meaning', 'reading', 'kanji'];
+            const questionType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+
+            let questionText = '';
+            let correctAnswer = '';
+            let options = [];
+
+            if (questionType === 'meaning') {
+                questionText = `Từ "${correctVocab.kanji}" có nghĩa là gì?`;
+                correctAnswer = correctVocab.meaning;
+                options = [correctAnswer];
+                while (options.length < 4) {
+                    const randomVocab = validVocab[Math.floor(Math.random() * validVocab.length)];
+                    if (randomVocab.meaning && !options.includes(randomVocab.meaning) && randomVocab.meaning !== correctAnswer) {
+                        options.push(randomVocab.meaning);
+                    }
+                }
+            } else if (questionType === 'reading') {
+                questionText = `Từ "${correctVocab.kanji}" có cách đọc là gì?`;
+                correctAnswer = correctVocab.reading;
+                options = [correctAnswer];
+                while (options.length < 4) {
+                    const randomVocab = validVocab[Math.floor(Math.random() * validVocab.length)];
+                    if (randomVocab.reading && !options.includes(randomVocab.reading) && randomVocab.reading !== correctAnswer) {
+                        options.push(randomVocab.reading);
+                    }
+                }
+            } else {
+                questionText = `Nghĩa "${correctVocab.meaning}" tương ứng với Kanji nào?`;
+                correctAnswer = correctVocab.kanji;
+                options = [correctAnswer];
+                while (options.length < 4) {
+                    const randomVocab = validVocab[Math.floor(Math.random() * validVocab.length)];
+                    if (randomVocab.kanji && !options.includes(randomVocab.kanji) && randomVocab.kanji !== correctAnswer) {
+                        options.push(randomVocab.kanji);
+                    }
+                }
+            }
+
+            options.sort(() => Math.random() - 0.5);
+
+            currentQuestion = { questionText, correctAnswer, options };
+            displayQuestion();
+        }
+
+        function displayQuestion() {
+            const questionElement = document.getElementById('question');
+            const optionsElement = document.getElementById('options');
+            const resultElement = document.getElementById('result');
+
+            questionElement.textContent = currentQuestion.questionText;
+            optionsElement.innerHTML = '';
+            resultElement.textContent = '';
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'w-full p-2 bg-gray-200 rounded hover:bg-gray-300';
+                button.textContent = option;
+                button.addEventListener('click', () => checkAnswer(option));
+                optionsElement.appendChild(button);
+            });
+        }
+
+        function checkAnswer(selected) {
+            const resultElement = document.getElementById('result');
+            if (selected === currentQuestion.correctAnswer) {
+                resultElement.textContent = 'Đúng!';
+                resultElement.className = 'mt-4 text-center text-green-500';
+            } else {
+                resultElement.textContent = `Sai! Đáp án đúng là: ${currentQuestion.correctAnswer}`;
+                resultElement.className = 'mt-4 text-center text-red-500';
+            }
+        }
+
+        function showQuiz() {
+            document.getElementById('quiz').classList.remove('hidden');
+            document.getElementById('flashcard').classList.add('hidden');
+            generateQuestion();
+        }
+
+        document.getElementById('startQuiz').addEventListener('click', showQuiz);
+
+        document.getElementById('nextQuestion').addEventListener('click', generateQuestion);
+
+        document.getElementById('closeQuiz').addEventListener('click', () => {
+            document.getElementById('quiz').classList.add('hidden');
+        });
+
+        // Khởi tạo danh sách từ vựng
+        displayVocabList(vocabData);
+    </script>
+</body>
+</html>
